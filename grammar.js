@@ -87,11 +87,10 @@ module.exports = grammar({
     // use 0x1::A::f as ff;
     use_module_member: $ => seq($.module_identity, '::', $.use_member),
     use_module_members: $ => seq($.module_identity, '::', '{', sepBy1(',', $.use_member), '}'),
-    _module_member: $ => choice(
-      $._struct_identifier,
-      $._function_identifier,
+    use_member: $ => seq(
+      field('member', $.identifier),
+      optional(seq('as', field('alias', $.identifier)))
     ),
-    use_member: $ => seq(field('member', choice('Self', $._module_member)), optional(seq('as', field('alias', $._module_member)))),
 
 
 
@@ -311,9 +310,19 @@ module.exports = grammar({
       'bytearray',
     ),
 
-    module_access: $ => choice($.identifier, $.maybe_qualified_module_access),
-    maybe_qualified_module_access: $ => seq(optional(seq(field('address', $.address_literal), '::')), field('module', $._module_identifier), '::', field('member', $._module_member)),
-
+    module_access: $ => choice(
+      $.identifier,
+      seq(
+        field('module', $._module_identifier),
+        '::',
+        field('member', $.identifier)
+      ),
+      seq(
+        field('module_ident', $.module_identity),
+        '::',
+        field('member', $.identifier)
+      ),
+    ),
     module_identity: $ => seq(
       field('address', $.address_literal),
       '::',

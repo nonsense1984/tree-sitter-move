@@ -36,7 +36,7 @@ public fun deposit<Token>(payee: address, to_deposit: Libra::T<Token>) acquires 
         type: (apply_type
           (module_access
             module: (module_identifier)
-            (identifier))
+            member: (identifier))
           type_arguments: (type_arguments
             (apply_type
               (module_access

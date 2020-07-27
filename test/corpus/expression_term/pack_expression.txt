@@ -20,17 +20,18 @@ S<A,B> {
   (pack_expression
     (name_expression
       (module_access
-        module: (module_identifier)
-        (identifier)))
+          module: (module_identifier)
+          member: (identifier)))
     body: (field_initialize_list
       (exp_field
         field: (field_identifier))))
   (pack_expression
     (name_expression
       (module_access
-        address: (address_literal)
-        module: (module_identifier)
-        (identifier)))
+          module_ident: (module_identity
+                          address: (address_literal)
+                          module: (module_identifier))
+          member: (identifier)))
     body: (field_initialize_list
       (exp_field
         field: (field_identifier)

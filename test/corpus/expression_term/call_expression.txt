@@ -10,7 +10,7 @@ M::borrow_global_mut<A>(sender);
     (name_expression
       (module_access
         module: (module_identifier)
-        (identifier))
+        member: (identifier))
       type_arguments: (type_arguments
         (apply_type
           (module_access

@@ -1,17 +1,11 @@
 ====
-types
+simple_types
 ====
 
 let a: u8;
 let a: &address;
 let a: &mut address;
-let a: (A);
-let a: (A, &mut A);
-let a: A;
-let a: A<B>;
-let a: A<B<C>>;
-let a: M::A<C, D<E>, E<F<G>>>;
-let a: 0x0::M::A;
+
 
 ---
 
@@ -38,34 +32,19 @@ let a: 0x0::M::A;
     type: (ref_type
       (apply_type
         (module_access
-          (identifier)))))
-  (let_statement
-    binds: (bind_list
-      (bind_var
-        (variable_identifier)))
-    type: (tuple_type
-      (apply_type
-        (module_access
-          (identifier)))))
-  (let_statement
-    binds: (bind_list
-      (bind_var
-        (variable_identifier)))
-    type: (tuple_type
-      (apply_type
-        (module_access
-          (identifier)))
-      (ref_type
-        (apply_type
-          (module_access
-            (identifier))))))
-  (let_statement
-    binds: (bind_list
-      (bind_var
-        (variable_identifier)))
-    type: (apply_type
-      (module_access
-        (identifier))))
+          (identifier))))))
+
+====
+generic_types
+====
+
+let a: A<B>;
+let a: A<B<C>>;
+let a: M::A<C, D<E>, E<F<G>>>;
+
+---
+
+(source_file
   (let_statement
     binds: (bind_list
       (bind_var
@@ -99,7 +78,7 @@ let a: 0x0::M::A;
     type: (apply_type
       (module_access
         module: (module_identifier)
-        (identifier))
+        member: (identifier))
       type_arguments: (type_arguments
         (apply_type
           (module_access
@@ -121,13 +100,54 @@ let a: 0x0::M::A;
               type_arguments: (type_arguments
                 (apply_type
                   (module_access
-                    (identifier))))))))))
+                    (identifier)))))))))))
+
+====
+usual_types
+====
+
+let a: (A);
+let a: (A, &mut A);
+let a: A;
+let a: 0x0::M::A;
+
+---
+
+(source_file
+  (let_statement
+    binds: (bind_list
+      (bind_var
+        (variable_identifier)))
+    type: (tuple_type
+      (apply_type
+        (module_access
+          (identifier)))))
+  (let_statement
+    binds: (bind_list
+      (bind_var
+        (variable_identifier)))
+    type: (tuple_type
+      (apply_type
+        (module_access
+          (identifier)))
+      (ref_type
+        (apply_type
+          (module_access
+            (identifier))))))
   (let_statement
     binds: (bind_list
       (bind_var
         (variable_identifier)))
     type: (apply_type
       (module_access
-        address: (address_literal)
-        module: (module_identifier)
-        (identifier)))))
+        (identifier))))
+  (let_statement
+    binds: (bind_list
+      (bind_var
+        (variable_identifier)))
+    type: (apply_type
+      (module_access
+        module_ident: (module_identity
+          address: (address_literal)
+          module: (module_identifier))
+        member: (identifier)))))
