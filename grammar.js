@@ -40,12 +40,13 @@ const PREC = {
 module.exports = grammar({
   name: 'move',
   extras: $ => [/\s/, $.line_comment, $.block_comment],
+  word: $ => $.identifier,
   conflicts: $ => [
     [$._struct_identifier, $._variable_identifier, $._function_identifier],
     [$._struct_identifier, $._function_identifier],
     [$.function_type_params],
     // [$.name_expression, $.quantifier_expression],
-    [$.name_expression],
+    [$.name_expression, $.call_expression, $.pack_expression],
   ],
 
   rules: {
@@ -176,7 +177,7 @@ module.exports = grammar({
       ')',
     ),
     resource_accquires: $ => seq(
-      'acquires', sepBy1(',', $.module_access)
+      'acquires', sepBy1(',', $._module_access)
     ),
 
     //// Spec block start
@@ -292,7 +293,7 @@ module.exports = grammar({
       $.function_type,
     ),
     apply_type: $ => seq(
-      $.module_access,
+      $._module_access,
       optional(field('type_arguments', $.type_arguments)),
     ),
     ref_type: $ => seq(
@@ -310,19 +311,23 @@ module.exports = grammar({
       'bytearray',
     ),
 
-    module_access: $ => choice(
+    _module_access: $ => choice(
+      alias($._reserved_identifier, $.identifier),
       $.identifier,
-      seq(
-        field('module', $._module_identifier),
-        '::',
-        field('member', $.identifier)
-      ),
-      seq(
-        field('module_ident', $.module_identity),
-        '::',
-        field('member', $.identifier)
-      ),
+      $.module_access,
+      $.qualified_module_access,
     ),
+    module_access: $ => seq(
+      field('module', $._module_identifier),
+      '::',
+      field('member', $.identifier)
+    ),
+    qualified_module_access: $ => seq(
+      field('module_ident', $.module_identity),
+      '::',
+      field('member', $.identifier)
+    ),
+
     module_identity: $ => seq(
       field('address', $.address_literal),
       '::',
@@ -398,15 +403,13 @@ module.exports = grammar({
       $.quantifier_expression
     ),
 
-    quantifier_expression: $ => seq(
-      // a hack to resolve conflict with module_access.
-      // TODO: make a better soluation.
-      token(/(forall|exists)[\s\n]/),
+    quantifier_expression: $ => prec.right(seq(
+      choice($._forall, $._exists),
       $.quantifier_bindings,
       optional(seq('where', $._expression)),
       ':',
       $._expression
-    ),
+    )),
     quantifier_bindings: $ => sepBy1(',', $.quantifier_binding),
     quantifier_binding: $ => choice(
       seq($.identifier, ':', $._type),
@@ -536,7 +539,9 @@ module.exports = grammar({
     _expression_term: $ => choice(
       $.break_expression,
       $.continue_expression,
-      $._name_exp,
+      $.name_expression,
+      $.call_expression,
+      $.pack_expression,
       $._literal_value,
       $.unit_expression,
       $.expression_list,
@@ -550,29 +555,27 @@ module.exports = grammar({
     ),
     break_expression: $ => choice('break'),
     continue_expression: $ => choice('continue'),
-    _name_exp: $ => choice(
-      $.name_expression,
-      $.pack_expression,
-      $.call_expression,
+    name_expression: $ => seq(
+      field('access', $._module_access),
+      optional(field('type_arguments', $.type_arguments)),
     ),
-    name_expression: $ => prec.dynamic(-1, seq(
-      $.module_access,
-      optional(field('type_arguments', $.type_arguments))
-    )),
+    call_expression: $ => seq(
+      field('access', $._module_access),
+      optional(field('type_arguments', $.type_arguments)),
+      field('args', $.arg_list),
+    ),
     pack_expression: $ => seq(
-      $.name_expression,
+      field('access', $._module_access),
+      optional(field('type_arguments', $.type_arguments)),
       field('body', $.field_initialize_list),
     ),
+
     field_initialize_list: $ => seq(
       '{',
       sepBy(',', $.exp_field),
       '}'
     ),
 
-    call_expression: $ => prec(PREC.call, seq(
-      $.name_expression,
-      field('args', $.arg_list),
-    )),
     arg_list: $ => seq(
       '(',
       sepBy(',', $._expression),
@@ -631,7 +634,7 @@ module.exports = grammar({
       $.bind_unpack,
     ),
     bind_unpack: $ => seq(
-      $.module_access,
+      $._module_access,
       optional(field('type_arguments', $.type_arguments)),
       field('bind_fields', $.bind_fields),
     ),
@@ -674,6 +677,11 @@ module.exports = grammar({
     _type_parameter_identifier: $ => alias($.identifier, $.type_parameter_identifier),
 
     identifier: $ => /[a-zA-Z_][0-9a-zA-Z_]*/,
+    _reserved_identifier: $ => choice($._forall, $._exists),
+
+    _forall: $ => 'forall',
+    _exists: $ => 'exists',
+
 
     line_comment: $ => token(seq(
       '//', /.*/
