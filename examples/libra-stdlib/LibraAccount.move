@@ -15,6 +15,7 @@ module LibraAccount {
     use 0x1::LBR::{Self, LBR};
     use 0x1::LCS;
     use 0x1::LibraTimestamp;
+    use 0x1::LibraTransactionPublishingOption;
     use 0x1::LibraTransactionTimeout;
     use 0x1::Signer;
     use 0x1::SlidingNonce;
@@ -145,6 +146,15 @@ module LibraAccount {
     const EPROLOGUE_CANT_PAY_GAS_DEPOSIT: u64 = 5;
     const EPROLOGUE_TRANSACTION_EXPIRED: u64 = 6;
     const EPROLOGUE_BAD_CHAIN_ID: u64 = 7;
+    const EPROLOGUE_SCRIPT_NOT_ALLOWED: u64 = 8;
+    const EPROLOGUE_MODULE_NOT_ALLOWED: u64 = 9;
+
+    /// This error will not be translated it should be an invariant violation.
+    const EPROLOGUE_UNEXPECTED_WRITESET: u64 = 10;
+
+    const WRITESET_TRANSACTION_TAG: u8 = 0;
+    const SCRIPT_TRANSACTION_TAG: u8 = 1;
+    const MODULE_TRANSACTION_TAG: u8 = 2;
 
 
     /// Initialize this module. This is only callable from genesis.
@@ -687,8 +697,6 @@ module LibraAccount {
         new_account_address: address,
         auth_key_prefix: vector<u8>,
         human_name: vector<u8>,
-        base_url: vector<u8>,
-        compliance_public_key: vector<u8>,
         add_all_currencies: bool,
     ) {
         let new_dd_account = create_signer(new_account_address);
@@ -696,9 +704,7 @@ module LibraAccount {
         Roles::new_designated_dealer_role(creator_account, &new_dd_account);
         DesignatedDealer::publish_designated_dealer_credential<CoinType>(&new_dd_account, creator_account, add_all_currencies);
         add_currencies_for_account<CoinType>(&new_dd_account, add_all_currencies);
-        DualAttestation::publish_credential(
-            &new_dd_account, creator_account, human_name, base_url, compliance_public_key
-        );
+        DualAttestation::publish_credential(&new_dd_account, creator_account, human_name);
         make_account(new_dd_account, auth_key_prefix)
     }
     spec fun create_designated_dealer {
@@ -718,17 +724,13 @@ module LibraAccount {
         new_account_address: address,
         auth_key_prefix: vector<u8>,
         human_name: vector<u8>,
-        base_url: vector<u8>,
-        compliance_public_key: vector<u8>,
         add_all_currencies: bool
     ) {
         // TODO: restrictions on creator_account?
         let new_account = create_signer(new_account_address);
         Roles::new_parent_vasp_role(creator_account, &new_account);
         VASP::publish_parent_vasp_credential(&new_account, creator_account);
-        DualAttestation::publish_credential(
-            &new_account, creator_account, human_name, base_url, compliance_public_key
-        );
+        DualAttestation::publish_credential(&new_account, creator_account, human_name);
         Event::publish_generator(&new_account);
         add_currencies_for_account<Token>(&new_account, add_all_currencies);
         make_account(new_account, auth_key_prefix)
@@ -845,19 +847,71 @@ module LibraAccount {
         exists<LibraAccount>(check_addr)
     }
 
-    /// The prologue is invoked at the beginning of every transaction
-    /// It verifies:
-    /// - The account's auth key matches the transaction's public key
-    /// - That the account has enough balance to pay for all of the gas
-    /// - That the sequence number matches the transaction's sequence key
-    fun prologue<Token>(
+    /// The prologue for module transaction
+    fun module_prologue<Token>(
         sender: &signer,
         txn_sequence_number: u64,
         txn_public_key: vector<u8>,
         txn_gas_price: u64,
         txn_max_gas_units: u64,
         txn_expiration_time: u64,
-        chain_id: u8
+        chain_id: u8,
+    ) acquires LibraAccount, Balance {
+        assert(
+            LibraTransactionPublishingOption::is_module_allowed(sender),
+            EPROLOGUE_MODULE_NOT_ALLOWED
+        );
+
+        prologue_common<Token>(
+            sender,
+            txn_sequence_number,
+            txn_public_key,
+            txn_gas_price,
+            txn_max_gas_units,
+            txn_expiration_time,
+            chain_id,
+        )
+    }
+    /// The prologue for script transaction
+    fun script_prologue<Token>(
+        sender: &signer,
+        txn_sequence_number: u64,
+        txn_public_key: vector<u8>,
+        txn_gas_price: u64,
+        txn_max_gas_units: u64,
+        txn_expiration_time: u64,
+        chain_id: u8,
+        script_hash: vector<u8>,
+    ) acquires LibraAccount, Balance {
+        assert(
+            LibraTransactionPublishingOption::is_script_allowed(sender, &script_hash),
+            EPROLOGUE_SCRIPT_NOT_ALLOWED
+        );
+
+        prologue_common<Token>(
+            sender,
+            txn_sequence_number,
+            txn_public_key,
+            txn_gas_price,
+            txn_max_gas_units,
+            txn_expiration_time,
+            chain_id,
+        )
+    }
+
+    /// The common prologue is invoked at the beginning of every transaction
+    /// It verifies:
+    /// - The account's auth key matches the transaction's public key
+    /// - That the account has enough balance to pay for all of the gas
+    /// - That the sequence number matches the transaction's sequence key
+    fun prologue_common<Token>(
+        sender: &signer,
+        txn_sequence_number: u64,
+        txn_public_key: vector<u8>,
+        txn_gas_price: u64,
+        txn_max_gas_units: u64,
+        txn_expiration_time: u64,
+        chain_id: u8,
     ) acquires LibraAccount, Balance {
         let transaction_sender = Signer::address_of(sender);
 
