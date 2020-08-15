@@ -216,15 +216,18 @@ module.exports = grammar({
         'assert', 'assume', 'decreases', 'aborts_if', 'ensures', 'succeeds_if',
         seq('requires', optional('module'))
       ),
-      $._expression,
+      optional(field('condition_properties', $.condition_properties)),
+      field('exp', $._expression),
       ';'
     ),
     spec_invariant: $ => seq(
       'invariant',
       optional(choice('update', 'pack', 'unpack', 'module')),
-      $._expression,
+      optional(field('condition_properties', $.condition_properties)),
+      field('exp', $._expression),
       ';'
     ),
+    condition_properties: $ => seq('[', sepBy(',', $.spec_property), ']'),
     spec_include: $ => seq('include', $._expression, ';'),
 
     spec_apply: $ => seq(
@@ -244,10 +247,10 @@ module.exports = grammar({
 
     spec_pragma: $ => seq(
       'pragma',
-      sepBy(',', $.spec_pragma_property),
+      sepBy(',', $.spec_property),
       ';'
     ),
-    spec_pragma_property: $ => seq($.identifier, optional(seq('=', $._literal_value))),
+    spec_property: $ => seq($.identifier, optional(seq('=', $._literal_value))),
 
     spec_variable: $ => seq(
       optional(choice('global', 'local')),
