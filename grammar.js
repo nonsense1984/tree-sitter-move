@@ -183,19 +183,21 @@ module.exports = grammar({
     //// Spec block start
     spec_block: $ => seq(
       'spec',
-      optional(choice(
-        seq('fun', $._function_identifier),
-        seq('struct', $._struct_identifier),
-        'module',
-        seq(
-          'schema',
-          $._struct_identifier,
-          optional(field('type_parameters', $.type_parameters)),
-        ),
-      )),
-      field('body', $.spec_body)
+      choice(
+        $._spec_function,
+        seq(optional(field('target', $.spec_block_target)), field('body', $.spec_body))
+      )
     ),
-
+    spec_block_target: $ => choice(
+      seq('fun', $._function_identifier),
+      seq('struct', $._struct_identifier),
+      'module',
+      seq(
+        'schema',
+        $._struct_identifier,
+        optional(field('type_parameters', $.type_parameters)),
+      ),
+    ),
     spec_body: $ => seq(
       '{',
       repeat($.use_decl),
@@ -209,7 +211,15 @@ module.exports = grammar({
       $.spec_include,
       $.spec_apply,
       $.spec_pragma,
-      $.spec_variable
+      $.spec_variable,
+      $.spec_let,
+    ),
+    spec_let: $ => seq(
+      'let',
+      field('name', $.identifier),
+      '=',
+      field('def', $._expression),
+      ';'
     ),
     spec_condition: $ => seq(
       choice(
