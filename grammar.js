@@ -224,32 +224,35 @@ module.exports = grammar({
     spec_condition: $ => choice(
       $._spec_condition,
       $._spec_abort_if,
-      $._spec_abort_with
+      $._spec_abort_with_or_modifies,
     ),
     _spec_condition: $ => seq(
-      choice(
+      field('kind', alias(choice(
         'assert',
         'assume',
         'decreases',
         'ensures',
         'succeeds_if',
         seq('requires', optional('module'))
-      ),
+      ), $.kind)),
       optional(field('condition_properties', $.condition_properties)),
       field('exp', $._expression),
       ';'
     ),
     _spec_abort_if: $ => seq(
-      'aborts_if',
+      field('kind', alias('aborts_if', $.kind)),
       optional(field('condition_properties', $.condition_properties)),
       field('exp', $._expression),
-      optional(seq('with', field('abort_code', $._expression))),
+      optional(seq('with', field('additional_exp', $._expression))),
       ';'
     ),
-    _spec_abort_with: $ => seq(
-      'aborts_with',
+    _spec_abort_with_or_modifies: $ => seq(
+      field('kind', alias(choice(
+        'aborts_with',
+        'modifies'
+      ), $.kind)),
       optional(field('condition_properties', $.condition_properties)),
-      sepBy1(',', field('abort_code', $._expression)),
+      sepBy1(',', field('additional_exp', $._expression)),
       ';'
     ),
 
