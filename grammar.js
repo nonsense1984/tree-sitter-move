@@ -83,11 +83,11 @@ module.exports = grammar({
     use_decl: $ => seq('use', choice($.use_module, $.use_module_member, $.use_module_members), ';'),
 
     // use 0x1::A (as AA);
-    use_module: $ => seq($.module_identity, optional(seq('as', field('alias', $._module_identifier)))),
+    use_module: $ => seq($._module_identity, optional(seq('as', field('alias', $._module_identifier)))),
     // use 0x1::A::T as TT;
     // use 0x1::A::f as ff;
-    use_module_member: $ => seq($.module_identity, '::', $.use_member),
-    use_module_members: $ => seq($.module_identity, '::', '{', sepBy1(',', $.use_member), '}'),
+    use_module_member: $ => seq($._module_identity, '::', field('use_member', $.use_member)),
+    use_module_members: $ => seq($._module_identity, '::', '{', sepBy1(',', field('use_member', $.use_member)), '}'),
     use_member: $ => seq(
       field('member', $.identifier),
       optional(seq('as', field('alias', $.identifier)))
@@ -177,7 +177,7 @@ module.exports = grammar({
       ')',
     ),
     resource_accquires: $ => seq(
-      'acquires', sepBy1(',', $._module_access)
+      'acquires', sepBy1(',', $.module_access)
     ),
 
     //// Spec block start
@@ -226,21 +226,27 @@ module.exports = grammar({
       $._spec_abort_if,
       $._spec_abort_with_or_modifies,
     ),
+    _spec_condition_kind: $ => choice(
+      'assert',
+      'assume',
+      'decreases',
+      'ensures',
+      'succeeds_if',
+    ),
     _spec_condition: $ => seq(
-      field('kind', alias(choice(
-        'assert',
-        'assume',
-        'decreases',
-        'ensures',
-        'succeeds_if',
-        seq('requires', optional('module'))
-      ), $.kind)),
+      choice(
+        field('kind', alias($._spec_condition_kind, $.condition_kind)),
+        seq(
+          field('kind', alias('requires', $.condition_kind)),
+          optional('module'),
+        )
+      ),
       optional(field('condition_properties', $.condition_properties)),
       field('exp', $._expression),
       ';'
     ),
     _spec_abort_if: $ => seq(
-      field('kind', alias('aborts_if', $.kind)),
+      field('kind', alias('aborts_if', $.condition_kind)),
       optional(field('condition_properties', $.condition_properties)),
       field('exp', $._expression),
       optional(seq('with', field('additional_exp', $._expression))),
@@ -250,15 +256,15 @@ module.exports = grammar({
       field('kind', alias(choice(
         'aborts_with',
         'modifies'
-      ), $.kind)),
+      ), $.condition_kind)),
       optional(field('condition_properties', $.condition_properties)),
       sepBy1(',', field('additional_exp', $._expression)),
       ';'
     ),
 
     spec_invariant: $ => seq(
-      'invariant',
-      optional(choice('update', 'pack', 'unpack', 'module')),
+      alias('invariant', $.condition_kind),
+      optional(alias(choice('update', 'pack', 'unpack', 'module'), $.invariant_modifier)),
       optional(field('condition_properties', $.condition_properties)),
       field('exp', $._expression),
       ';'
@@ -332,7 +338,7 @@ module.exports = grammar({
       $.function_type,
     ),
     apply_type: $ => seq(
-      $._module_access,
+      $.module_access,
       optional(field('type_arguments', $.type_arguments)),
     ),
     ref_type: $ => seq(
@@ -350,24 +356,22 @@ module.exports = grammar({
       'bytearray',
     ),
 
-    _module_access: $ => choice(
-      alias($._reserved_identifier, $.identifier),
-      $.identifier,
-      $.module_access,
-      $.qualified_module_access,
-    ),
-    module_access: $ => seq(
-      field('module', $._module_identifier),
-      '::',
-      field('member', $.identifier)
-    ),
-    qualified_module_access: $ => seq(
-      field('module_ident', $.module_identity),
-      '::',
-      field('member', $.identifier)
+    module_access: $ => choice(
+      field('member', alias($._reserved_identifier, $.identifier)),
+      field('member', $.identifier),
+      seq(
+        field('module', $._module_identifier),
+        '::',
+        field('member', $.identifier)
+      ),
+      seq(
+        $._module_identity,
+        '::',
+        field('member', $.identifier)
+      ),
     ),
 
-    module_identity: $ => seq(
+    _module_identity: $ => seq(
       field('address', $.address_literal),
       '::',
       field('module', $._module_identifier)
@@ -595,16 +599,16 @@ module.exports = grammar({
     break_expression: $ => choice('break'),
     continue_expression: $ => choice('continue'),
     name_expression: $ => seq(
-      field('access', $._module_access),
+      field('access', $.module_access),
       optional(field('type_arguments', $.type_arguments)),
     ),
     call_expression: $ => seq(
-      field('access', $._module_access),
+      field('access', $.module_access),
       optional(field('type_arguments', $.type_arguments)),
       field('args', $.arg_list),
     ),
     pack_expression: $ => seq(
-      field('access', $._module_access),
+      field('access', $.module_access),
       optional(field('type_arguments', $.type_arguments)),
       field('body', $.field_initialize_list),
     ),
@@ -673,7 +677,7 @@ module.exports = grammar({
       $.bind_unpack,
     ),
     bind_unpack: $ => seq(
-      $._module_access,
+      $.module_access,
       optional(field('type_arguments', $.type_arguments)),
       field('bind_fields', $.bind_fields),
     ),
