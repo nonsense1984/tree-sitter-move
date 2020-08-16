@@ -41,6 +41,7 @@ module.exports = grammar({
   name: 'move',
   extras: $ => [/\s/, $.line_comment, $.block_comment],
   word: $ => $.identifier,
+  supertypes: $ => [$._spec_block_target],
   conflicts: $ => [
     [$._struct_identifier, $._variable_identifier, $._function_identifier],
     [$._struct_identifier, $._function_identifier],
@@ -185,18 +186,21 @@ module.exports = grammar({
       'spec',
       choice(
         $._spec_function,
-        seq(optional(field('target', $.spec_block_target)), field('body', $.spec_body))
+        seq(optional(field('target', $._spec_block_target)), field('body', $.spec_body))
       )
     ),
-    spec_block_target: $ => choice(
-      seq('fun', $._function_identifier),
-      seq('struct', $._struct_identifier),
-      'module',
-      seq(
-        'schema',
-        $._struct_identifier,
-        optional(field('type_parameters', $.type_parameters)),
-      ),
+    _spec_block_target: $ => choice(
+      $.spec_block_target_fun,
+      $.spec_block_target_struct,
+      alias('module', $.spec_block_target_module),
+      $.spec_block_target_schema,
+    ),
+    spec_block_target_fun: $ => seq('fun', $._function_identifier),
+    spec_block_target_struct: $ => seq('struct', $._struct_identifier),
+    spec_block_target_schema: $ => seq(
+      'schema',
+      field('name', $._struct_identifier),
+      optional(field('type_parameters', $.type_parameters)),
     ),
     spec_body: $ => seq(
       '{',
@@ -263,8 +267,8 @@ module.exports = grammar({
     ),
 
     spec_invariant: $ => seq(
-      alias('invariant', $.condition_kind),
-      optional(alias(choice('update', 'pack', 'unpack', 'module'), $.invariant_modifier)),
+      field('kind', alias('invariant', $.condition_kind)),
+      optional(field('modifier', alias(choice('update', 'pack', 'unpack', 'module'), $.invariant_modifier))),
       optional(field('condition_properties', $.condition_properties)),
       field('exp', $._expression),
       ';'

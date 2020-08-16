@@ -10,17 +10,18 @@ spec fun assert_caller_aborts_with_logical_error {
 
 (source_file
   (spec_block
-    target: (spec_block_target
+    target: (spec_block_target_fun
       (function_identifier))
     body: (spec_body
       (spec_condition
-        kind: (kind)
+        kind: (condition_kind)
         condition_properties: (condition_properties
           (spec_property
             (identifier)))
         exp: (binary_expression
           lhs: (name_expression
-            access: (identifier))
+            access: (module_access
+              member: (identifier)))
           operator: (binary_operator)
           rhs: (num_literal))
         additional_exp: (num_literal)))))
@@ -39,16 +40,18 @@ spec fun aborts_with_mixed {
 
 (source_file
   (spec_block
-    target: (spec_block_target
+    target: (spec_block_target_fun
       (function_identifier))
     body: (spec_body
       (spec_condition
-        kind: (kind)
+        kind: (condition_kind)
         additional_exp: (num_literal)
         additional_exp: (num_literal))
       (spec_condition
-        kind: (kind)
+        kind: (condition_kind)
         additional_exp: (name_expression
-          access: (identifier))
+          access: (module_access
+            member: (identifier)))
         additional_exp: (name_expression
-          access: (identifier))))))
+          access: (module_access
+            member: (identifier)))))))

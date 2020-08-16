@@ -16,7 +16,7 @@ let a: &mut address;
         (variable_identifier)))
     type: (apply_type
       (module_access
-        (identifier))))
+        member: (identifier))))
   (let_statement
     binds: (bind_list
       (bind_var
@@ -24,7 +24,7 @@ let a: &mut address;
     type: (ref_type
       (apply_type
         (module_access
-          (identifier)))))
+          member: (identifier)))))
   (let_statement
     binds: (bind_list
       (bind_var
@@ -32,18 +32,16 @@ let a: &mut address;
     type: (ref_type
       (apply_type
         (module_access
-          (identifier))))))
+          member: (identifier))))))
 
 ====
 generic_types
 ====
 
 let a: A<B>;
-let a: A<B<C>>;
-let a: M::A<C, D<E>, E<F<G>>>;
+let a: M::A<D<E>, E<F<G>>>;
 
 ---
-
 (source_file
   (let_statement
     binds: (bind_list
@@ -51,26 +49,11 @@ let a: M::A<C, D<E>, E<F<G>>>;
         (variable_identifier)))
     type: (apply_type
       (module_access
-        (identifier))
+        member: (identifier))
       type_arguments: (type_arguments
         (apply_type
           (module_access
-            (identifier))))))
-  (let_statement
-    binds: (bind_list
-      (bind_var
-        (variable_identifier)))
-    type: (apply_type
-      (module_access
-        (identifier))
-      type_arguments: (type_arguments
-        (apply_type
-          (module_access
-            (identifier))
-          type_arguments: (type_arguments
-            (apply_type
-              (module_access
-                (identifier))))))))
+            member: (identifier))))))
   (let_statement
     binds: (bind_list
       (bind_var
@@ -82,25 +65,22 @@ let a: M::A<C, D<E>, E<F<G>>>;
       type_arguments: (type_arguments
         (apply_type
           (module_access
-            (identifier)))
-        (apply_type
-          (module_access
-            (identifier))
+            member: (identifier))
           type_arguments: (type_arguments
             (apply_type
               (module_access
-                (identifier)))))
+                member: (identifier)))))
         (apply_type
           (module_access
-            (identifier))
+            member: (identifier))
           type_arguments: (type_arguments
             (apply_type
               (module_access
-                (identifier))
+                member: (identifier))
               type_arguments: (type_arguments
                 (apply_type
                   (module_access
-                    (identifier)))))))))))
+                    member: (identifier)))))))))))
 
 ====
 usual_types
@@ -121,7 +101,7 @@ let a: 0x0::M::A;
     type: (tuple_type
       (apply_type
         (module_access
-          (identifier)))))
+          member: (identifier)))))
   (let_statement
     binds: (bind_list
       (bind_var
@@ -129,25 +109,24 @@ let a: 0x0::M::A;
     type: (tuple_type
       (apply_type
         (module_access
-          (identifier)))
+          member: (identifier)))
       (ref_type
         (apply_type
           (module_access
-            (identifier))))))
+            member: (identifier))))))
   (let_statement
     binds: (bind_list
       (bind_var
         (variable_identifier)))
     type: (apply_type
       (module_access
-        (identifier))))
+        member: (identifier))))
   (let_statement
     binds: (bind_list
       (bind_var
         (variable_identifier)))
     type: (apply_type
       (module_access
-        module_ident: (module_identity
-          address: (address_literal)
-          module: (module_identifier))
+        address: (address_literal)
+        module: (module_identifier)
         member: (identifier)))))
