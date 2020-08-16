@@ -842,7 +842,7 @@
                       "name": "target",
                       "content": {
                         "type": "SYMBOL",
-                        "name": "spec_block_target"
+                        "name": "_spec_block_target"
                       }
                     },
                     {
@@ -864,65 +864,86 @@
         }
       ]
     },
-    "spec_block_target": {
+    "_spec_block_target": {
       "type": "CHOICE",
       "members": [
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "STRING",
-              "value": "fun"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "_function_identifier"
-            }
-          ]
+          "type": "SYMBOL",
+          "name": "spec_block_target_fun"
         },
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "STRING",
-              "value": "struct"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "_struct_identifier"
-            }
-          ]
+          "type": "SYMBOL",
+          "name": "spec_block_target_struct"
         },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": "module"
+          },
+          "named": true,
+          "value": "spec_block_target_module"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "spec_block_target_schema"
+        }
+      ]
+    },
+    "spec_block_target_fun": {
+      "type": "SEQ",
+      "members": [
         {
           "type": "STRING",
-          "value": "module"
+          "value": "fun"
         },
         {
-          "type": "SEQ",
+          "type": "SYMBOL",
+          "name": "_function_identifier"
+        }
+      ]
+    },
+    "spec_block_target_struct": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "struct"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_struct_identifier"
+        }
+      ]
+    },
+    "spec_block_target_schema": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "schema"
+        },
+        {
+          "type": "FIELD",
+          "name": "name",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_struct_identifier"
+          }
+        },
+        {
+          "type": "CHOICE",
           "members": [
             {
-              "type": "STRING",
-              "value": "schema"
+              "type": "FIELD",
+              "name": "type_parameters",
+              "content": {
+                "type": "SYMBOL",
+                "name": "type_parameters"
+              }
             },
             {
-              "type": "SYMBOL",
-              "name": "_struct_identifier"
-            },
-            {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "FIELD",
-                  "name": "type_parameters",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "type_parameters"
-                  }
-                },
-                {
-                  "type": "BLANK"
-                }
-              ]
+              "type": "BLANK"
             }
           ]
         }
@@ -1315,42 +1336,50 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "ALIAS",
+          "type": "FIELD",
+          "name": "kind",
           "content": {
-            "type": "STRING",
-            "value": "invariant"
-          },
-          "named": true,
-          "value": "condition_kind"
+            "type": "ALIAS",
+            "content": {
+              "type": "STRING",
+              "value": "invariant"
+            },
+            "named": true,
+            "value": "condition_kind"
+          }
         },
         {
           "type": "CHOICE",
           "members": [
             {
-              "type": "ALIAS",
+              "type": "FIELD",
+              "name": "modifier",
               "content": {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": "update"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "pack"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "unpack"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "module"
-                  }
-                ]
-              },
-              "named": true,
-              "value": "invariant_modifier"
+                "type": "ALIAS",
+                "content": {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "STRING",
+                      "value": "update"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "pack"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "unpack"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "module"
+                    }
+                  ]
+                },
+                "named": true,
+                "value": "invariant_modifier"
+              }
             },
             {
               "type": "BLANK"
@@ -4750,6 +4779,8 @@
   ],
   "externals": [],
   "inline": [],
-  "supertypes": []
+  "supertypes": [
+    "_spec_block_target"
+  ]
 }
 
